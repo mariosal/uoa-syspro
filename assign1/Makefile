@@ -1,7 +1,9 @@
 # Exercise configuration
 
 OBJS = build/main.o \
-       build/date.o
+       build/cdr.o \
+       build/date.o \
+       build/num.o
 
 BIN = werhauz
 
@@ -27,7 +29,13 @@ clean :
 build/main.o : src/main.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/cdr.o : src/cdr.c include/cdr.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 build/date.o : src/date.c include/date.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build/num.o : src/num.c include/num.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(BIN) : $(OBJS)
