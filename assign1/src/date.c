@@ -8,23 +8,7 @@ struct Date {
   int year;
 };
 
-struct Date* DateInit(int day, int month, int year) {
-  struct Date* date = malloc(sizeof(*date));
-  if (date == NULL) {
-    exit(EXIT_FAILURE);
-  }
-  date->day = day;
-  date->month = month;
-  date->year = year;
-  return date;
-}
-
-void DateReset(struct Date** date) {
-  free(*date);
-  *date = NULL;
-}
-
-struct Date* DateParse(const char* str) {
+struct Date* DateInit(const char* str) {
   struct Date* date = malloc(sizeof(*date));
   if (date == NULL) {
     exit(EXIT_FAILURE);
@@ -33,9 +17,7 @@ struct Date* DateParse(const char* str) {
   return date;
 }
 
-int DateYear(const struct Date* date) {
-  if (date == NULL) {
-    return -1;
-  }
-  return date->year;
+void DateReset(struct Date** date) {
+  free(*date);
+  *date = NULL;
 }
