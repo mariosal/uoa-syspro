@@ -14,7 +14,8 @@ make
 ## Execution
 
 ```sh
-./werhauz
+./werhauz -o etc/input1.txt
+./werhauz -o etc/input2.txt -h1 11 -h2 17 -s 384
 ```
 
 ## Cleaning
