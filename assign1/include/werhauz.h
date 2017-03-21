@@ -8,7 +8,7 @@ void WerhauzInsert(struct Werhauz* werhauz, const char* str);
 void WerhauzDelete(struct Werhauz* werhauz, const char* caller, const char* id);
 void WerhauzFind(struct Werhauz* werhauz, const char* caller, const char* str);
 void WerhauzLookup(struct Werhauz* werhauz, const char* callee, const char* str);
-void WerhauzIndist1(struct Werhauz* werhauz, const char* caller1, const char* caller2);
+void WerhauzIndist(struct Werhauz* werhauz, const char* caller1, const char* caller2);
 void WerhauzTopdest(struct Werhauz* werhauz, const char* caller);
 void WerhauzTop(struct Werhauz* werhauz, int k);
 void WerhauzBye(struct Werhauz* werhauz);

@@ -21,9 +21,9 @@ static void Read(struct Werhauz* werhauz, FILE* in) {
   char cmd[512];
   char buf1[512];
   char buf2[512];
-  char buf3[512];
-  char buf4[512];
+  bool byed = false;
   while (fscanf(in, "%512s", cmd) != EOF) {
+    buf1[0] = buf2[0] = '\0';
     if (Equals(cmd, "insert")) {
       fscanf(in, "%s", buf1);
       WerhauzInsert(werhauz, buf1);
@@ -31,14 +31,14 @@ static void Read(struct Werhauz* werhauz, FILE* in) {
       fscanf(in, "%s%s", buf1, buf2);
       WerhauzDelete(werhauz, buf1, buf2);
     } else if (Equals(cmd, "find")) {
-      fscanf(in, "%512s%*[ \t\n\v\f\r]%512[^\n]", buf1, buf2);
+      fscanf(in, "%512s%*[ \t\v\f\r]%512[^\n]", buf1, buf2);
       WerhauzFind(werhauz, buf1, buf2);
     } else if (Equals(cmd, "lookup")) {
-      fscanf(in, "%512s%*[ \t\n\v\f\r]%512[^\n]", buf1, buf2);
+      fscanf(in, "%512s%*[ \t\v\f\r]%512[^\n]", buf1, buf2);
       WerhauzLookup(werhauz, buf1, buf2);
-    } else if (Equals(cmd, "indist1")) {
+    } else if (Equals(cmd, "indist")) {
       fscanf(in, "%512s%512s", buf1, buf2);
-      WerhauzIndist1(werhauz, buf1, buf2);
+      WerhauzIndist(werhauz, buf1, buf2);
     } else if (Equals(cmd, "topdest")) {
       fscanf(in, "%512s", buf1);
       WerhauzTopdest(werhauz, buf1);
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   FILE* op = NULL;
   size_t h1_num_entries = 11;
   size_t h2_num_entries = 17;
-  size_t bucket_size = 16;
+  size_t bucket_size = 24 * 16;
   char buf[512];
   for (int i = 1; i < argc; ++i) {
     if (Equals(argv[i], "o")) {

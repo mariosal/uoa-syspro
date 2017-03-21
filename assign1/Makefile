@@ -4,7 +4,6 @@ OBJS = build/main.o \
        build/cdr.o \
        build/date.o \
        build/hash.o \
-       build/num.o \
        build/werhauz.o
 
 BIN = werhauz
@@ -38,9 +37,6 @@ build/date.o : src/date.c include/date.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/hash.o : src/hash.c include/hash.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-build/num.o : src/num.c include/num.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/werhauz.o : src/werhauz.c include/werhauz.h
