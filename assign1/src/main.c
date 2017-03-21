@@ -21,7 +21,6 @@ static void Read(struct Werhauz* werhauz, FILE* in) {
   char cmd[512];
   char buf1[512];
   char buf2[512];
-  bool byed = false;
   while (fscanf(in, "%512s", cmd) != EOF) {
     buf1[0] = buf2[0] = '\0';
     if (Equals(cmd, "insert")) {
@@ -60,7 +59,6 @@ static void Read(struct Werhauz* werhauz, FILE* in) {
 }
 
 int main(int argc, char** argv) {
-  setbuf(stdout, NULL);
   FILE* op = NULL;
   size_t h1_num_entries = 11;
   size_t h2_num_entries = 17;

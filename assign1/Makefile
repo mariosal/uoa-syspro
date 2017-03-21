@@ -1,6 +1,7 @@
 # Exercise configuration
 
 OBJS = build/main.o \
+       build/array.o \
        build/cdr.o \
        build/date.o \
        build/hash.o \
@@ -28,6 +29,9 @@ clean :
 # Exercise builds
 
 build/main.o : src/main.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build/array.o : src/array.c include/array.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/cdr.o : src/cdr.c include/cdr.h

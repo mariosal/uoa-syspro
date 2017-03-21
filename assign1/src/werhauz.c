@@ -4,6 +4,7 @@
 #include <string.h>
 #include "date.h"
 #include "hash.h"
+#include "array.h"
 
 struct Werhauz {
   struct Hash* h1;
@@ -171,6 +172,60 @@ void WerhauzLookup(struct Werhauz* werhauz, const char* callee, const char* str)
 }
 
 void WerhauzIndist(struct Werhauz* werhauz, const char* caller1, const char* caller2) {
+  struct Array* a1 = ArrayInit();
+  HashGetCdrs(werhauz->h1, Num(caller1), a1);
+  HashGetCdrs(werhauz->h2, Num(caller1), a1);
+
+  struct Array* a2 = ArrayInit();
+  HashGetCdrs(werhauz->h1, Num(caller2), a2);
+  HashGetCdrs(werhauz->h2, Num(caller2), a2);
+
+  struct Array* a3 = ArrayInit();
+  for (size_t i = 0; i < ArrayLen(a1); ++i) {
+    for (size_t j = 0; j < ArrayLen(a2); ++j) {
+      if (ArrayGet(a1, i) == ArrayGet(a2, j)) {
+        bool dupl = false;
+        for (size_t k = 0; k < ArrayLen(a3); ++k) {
+          if (ArrayGet(a3, k) == ArrayGet(a1, i)) {
+            dupl = true;
+            break;
+          }
+        }
+        if (!dupl) {
+          ArrayInsert(a3, ArrayGet(a1, i));
+        }
+      }
+    }
+  }
+
+  bool* map = malloc(sizeof(*map) * ArrayLen(a3));
+  memset(map, 0, sizeof(*map) * ArrayLen(a3));
+  for (size_t i = 0; i < ArrayLen(a3); ++i) {
+    for (size_t j = 0; j < ArrayLen(a3); ++j) {
+      if (ArrayGet(a3, i) == ArrayGet(a3, j)) {
+        continue;
+      }
+      if (HashContains(werhauz->h1, ArrayGet(a3, i), ArrayGet(a3, j)) ||
+          HashContains(werhauz->h1, ArrayGet(a3, j), ArrayGet(a3, i)) ||
+          HashContains(werhauz->h2, ArrayGet(a3, i), ArrayGet(a3, j)) ||
+          HashContains(werhauz->h2, ArrayGet(a3, j), ArrayGet(a3, i))) {
+        map[i] = true;
+        map[j] = true;
+      }
+    }
+  }
+
+  printf("Indist:\n");
+  for (size_t i = 0; i < ArrayLen(a3); ++i) {
+    if (!map[i] && ArrayGet(a3, i) != Num(caller1) && ArrayGet(a3, i) != Num(caller2)) {
+      printf("%03lld-%010lld\n", ArrayGet(a3, i) / 10000000000LL, ArrayGet(a3, i) % 10000000000LL);
+    }
+  }
+  printf("\n");
+  ArrayReset(&a1);
+  ArrayReset(&a2);
+  ArrayReset(&a3);
+  free(map);
 }
 
 void WerhauzTopdest(struct Werhauz* werhauz, const char* caller) {
@@ -181,10 +236,12 @@ void WerhauzTop(struct Werhauz* werhauz, int k) {
 }
 
 void WerhauzBye(struct Werhauz* werhauz) {
+  HashBye(werhauz->h1, false);
+  HashBye(werhauz->h2, true);
 }
 
 void WerhauzPrint(struct Werhauz* werhauz, const char* str) {
-  if (str[10] == '1') {
+  if (str[9] == '1') {
     HashPrint(werhauz->h1);
   } else {
     HashPrint(werhauz->h2);

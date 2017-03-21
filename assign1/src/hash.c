@@ -78,6 +78,38 @@ static void CdrNodePrint(const struct CdrNode* node, int t1, int t2, int d1, int
   CdrNodePrint(node->next, t1, t2, d1, d2);
 }
 
+static void CdrNodeGetCdrs(const struct CdrNode* node, long long num, struct Array* a) {
+  if (node == NULL) {
+    return;
+  }
+  for (size_t i = 0; i < node->len; ++i) {
+    if (CdrCaller(node->cdrs[i]) == num) {
+      ArrayInsert(a, CdrCallee(node->cdrs[i]));
+    } else {
+      ArrayInsert(a, CdrCaller(node->cdrs[i]));
+    }
+  }
+  CdrNodeGetCdrs(node->next, num, a);
+}
+
+static bool CdrNodeContains(const struct CdrNode* node, long long num1, long long num2) {
+  if (node == NULL) {
+    return false;
+  }
+  for (size_t i = 0; i < node->len; ++i) {
+    if (CdrCaller(node->cdrs[i]) == num1) {
+      if (CdrCallee(node->cdrs[i]) == num2) {
+        return true;
+      }
+    } else {
+      if (CdrCaller(node->cdrs[i]) == num2) {
+        return true;
+      }
+    }
+  }
+  return CdrNodeContains(node->next, num1, num2);
+}
+
 static void CdrNodeTopdest(const struct CdrNode* node, long long num, int* map) {
   if (node == NULL) {
     return;
@@ -239,12 +271,12 @@ static void HashBucketTopdest(const struct HashBucket* bucket, long long num) {
       memset(map, 0, sizeof(map));
       CdrNodeTopdest(bucket->nodes[i]->head, num, map);
       int max = map[0];
-      for (size_t i = 0; i < 1000; ++i) {
-        max = Max(max, map[i]);
+      for (size_t j = 0; j < 1000; ++j) {
+        max = Max(max, map[j]);
       }
-      for (size_t i = 0; i < 1000; ++i) {
+      for (size_t j = 0; j < 1000; ++j) {
         if (map[i] == max && max != 0) {
-          printf("Country code: %03zu, Calls made: %d\n", i, map[i]);
+          printf("Country code: %03zu, Calls made: %d\n", j, map[j]);
         }
       }
       return;
@@ -258,12 +290,38 @@ static void HashBucketPrint(const struct HashBucket* bucket) {
     return;
   }
   for (size_t i = 0; i < bucket->len; ++i) {
-    printf("Num %zu:\n", bucket->nodes[i]->num);
+    printf("Num %03lld-%010lld:\n", bucket->nodes[i]->num / 10000000000LL, bucket->nodes[i]->num % 10000000000LL);
     CdrNodePrint(bucket->nodes[i]->head, 0, 9999, 0, 99999999);
     printf("\n");
   }
   HashBucketPrint(bucket->next);
 }
+
+static void HashBucketGetCdrs(struct HashBucket* bucket, long long num, struct Array* a) {
+  if (bucket == NULL) {
+    return;
+  }
+  for (size_t i = 0; i < bucket->len; ++i) {
+    if (bucket->nodes[i]->num == num) {
+      CdrNodeGetCdrs(bucket->nodes[i]->head, num, a);
+      return;
+    }
+  }
+  HashBucketGetCdrs(bucket->next, num, a);
+}
+
+static bool HashBucketContains(const struct HashBucket* bucket, long long num1, long long num2) {
+  if (bucket == NULL) {
+    return false;
+  }
+  for (size_t i = 0; i < bucket->len; ++i) {
+    if (bucket->nodes[i]->num == num1) {
+      return CdrNodeContains(bucket->nodes[i]->head, num1, num2);
+    }
+  }
+  return HashBucketContains(bucket->next, num1, num2);
+}
+
 
 static void HashBucketReset(struct HashBucket** bucket, bool remove) {
   if (bucket != NULL) {
@@ -314,6 +372,18 @@ void HashReset(struct Hash** hash, bool remove) {
   *hash = NULL;
 }
 
+void HashBye(struct Hash* hash, bool remove) {
+  for (size_t i = 0; i < hash->size; ++i) {
+    struct HashBucket* it = hash->table[i];
+    while (it != NULL) {
+      struct HashBucket* tmp = it;
+      it = it->next;
+      HashBucketReset(&tmp, remove);
+    }
+    hash->table[i] = NULL;
+  }
+}
+
 void HashInsert(struct Hash* hash, long long num, struct Cdr* cdr) {
   size_t pos = num % hash->size;
   if (hash->table[pos] == NULL) {
@@ -354,4 +424,14 @@ void HashPrint(const struct Hash* hash) {
     HashBucketPrint(hash->table[i]);
     printf("\n");
   }
+}
+
+void HashGetCdrs(const struct Hash* hash, long long num, struct Array* a) {
+  size_t pos = num % hash->size;
+  HashBucketGetCdrs(hash->table[pos], num, a);
+}
+
+bool HashContains(const struct Hash* hash, long long num1, long long num2) {
+  size_t pos = num1 % hash->size;
+  return HashBucketContains(hash->table[pos], num1, num2);
 }

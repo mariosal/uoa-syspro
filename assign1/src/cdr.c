@@ -46,7 +46,6 @@ struct Cdr* CdrInit(const char* str) {
   cdr->callee = Num(callee);
   cdr->date = Date(date);
   cdr->time = Time(time);
-  CdrPrint(cdr);
   return cdr;
 }
 
