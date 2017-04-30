@@ -275,7 +275,7 @@ static void HashBucketTopdest(const struct HashBucket* bucket, long long num) {
         max = Max(max, map[j]);
       }
       for (size_t j = 0; j < 1000; ++j) {
-        if (map[i] == max && max != 0) {
+        if (map[j] == max && max != 0) {
           printf("Country code: %03zu, Calls made: %d\n", j, map[j]);
         }
       }
