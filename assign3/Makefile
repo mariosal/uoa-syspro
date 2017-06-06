@@ -33,16 +33,16 @@ build/mi_main.o : src/mi/main.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(MI_BIN) : $(MI_OBJS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 build/cs_main.o : src/cs/main.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(CS_BIN) : $(CS_OBJS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 build/ms_main.o : src/ms/main.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(MS_BIN) : $(MS_OBJS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
