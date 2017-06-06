@@ -1,5 +1,8 @@
 build/
 output/
+MirrorInitiator
+ContentServer
+MirrorServer
 
 # Prerequisites
 *.d
@@ -38,19 +41,17 @@ output/
 *.i*86
 *.x86_64
 *.hex
-jms_console
-jms_coord
 
 # Debug files
 *.dSYM/
 *.su
 *.idb
 *.pdb
-vgcore.*
 
 # Kernel Module Compile Results
 *.mod*
 *.cmd
+.tmp_versions/
 modules.order
 Module.symvers
 Mkfile.old
