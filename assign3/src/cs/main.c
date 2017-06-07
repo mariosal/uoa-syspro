@@ -1,50 +1,137 @@
+#include <arpa/inet.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-static bool Equals(const char* a, const char* b) {
-  if (a[0] == '-') {
-    return Equals(a + 1, b);
+#include "str.h"
+
+#define BUFSIZE 1024
+
+static ssize_t WriteAll(int fd, const void* buff, size_t count) {
+  ssize_t written = 0;
+  for (ssize_t i = 0; written < count; written += i) {
+    i = write(fd, (const unsigned char*)buff + written, count - written);
   }
-  if (b[0] == '-') {
-    return Equals(a, b + 1);
+  return written;
+}
+
+static void List(int sock, int id, int delay) {
+  printf("Listing\n");
+  FILE* pipe = popen("find -type d", "r");
+  if (pipe == NULL) {
+    Error("popen");
   }
-  if (tolower(a[0]) == tolower(b[0])) {
-    return a[0] == '\0' || Equals(a + 1, b + 1);
+  while (true) {
+    char c;
+    if (fread(&c, sizeof(c), 1, pipe) == 0) {
+      break;
+    }
+    write(sock, &c, sizeof(c));
   }
-  return false;
+  pclose(pipe);
+
+  pipe = popen("find -type f", "r");
+  if (pipe == NULL) {
+    Error("popen");
+  }
+  write(sock, &"f\n", 2 * sizeof(char));
+  while (true) {
+    char c;
+    if (fread(&c, sizeof(c), 1, pipe) == 0) {
+      break;
+    }
+    write(sock, &c, sizeof(c));
+  }
+  pclose(pipe);
+}
+
+static void Fetch(int sock, int id, const char* path) {
+  char buf[BUFSIZE];
+  snprintf(buf, sizeof(buf), "cat %s", path);
+  printf("%s\n", buf);
+  FILE* pipe = popen(buf, "r");
+  if (pipe == NULL) {
+    Error("popen");
+  }
+  while (true) {
+    char c;
+    if (fread(&c, sizeof(c), 1, pipe) == 0) {
+      break;
+    }
+    write(sock, &c, sizeof(c));
+  }
+  pclose(pipe);
+}
+
+static void Handle(void* sock_desc, const char* root) {
+  int sock = *(int*)sock_desc;
+  struct Str* buf = StrInit();
+  int id = 0;
+  int delay = 0;
+
+  StrRead(buf, sock);
+  if (!strcmp(StrS(buf), "LIST")) {
+    StrReadNl(buf, sock);
+    sscanf(StrS(buf), "%d%d", &id, &delay);
+    List(sock, id, delay);
+  } else {
+    StrRead(buf, sock);
+    sscanf(StrS(buf), "%d", &id);
+    StrReadNl(buf, sock);
+    Fetch(sock, id, StrS(buf));
+  }
+
+  StrReset(&buf);
+  close(sock);
 }
 
 int main(int argc, char** argv) {
-  char r_name[128];
-  char w_name[128];
-  char op_name[128];
-  r_name[0] = w_name[0] = op_name[0] = '\0';
+  setbuf(stdout, NULL);
+  int port = 5000;
+  char root[BUFSIZE];
+  strcpy(root, "etc");
   for (int i = 1; i < argc; ++i) {
-    if (Equals(argv[i], "w")) {
+    if (Equals(argv[i], "p")) {
       ++i;
-      sscanf(argv[i], "%s", w_name);
-    } else if (Equals(argv[i], "r")) {
+      sscanf(argv[i], "%d", &port);
+    } else if (Equals(argv[i], "d")) {
       ++i;
-      sscanf(argv[i], "%s", r_name);
-    } else if (Equals(argv[i], "o")) {
-      ++i;
-      sscanf(argv[i], "%s", op_name);
+      strcpy(root, argv[i]);
     }
   }
 
-  mkfifo(w_name, 0700);
-  mkfifo(r_name, 0700);
+  printf("%d %s\n", port, root);
+  chdir(root);
 
-  FILE* w = fopen(w_name, "w");
-  FILE* r = fopen(r_name, "r");
-
-  FILE* op = NULL;
-  if (op_name[0] != '\0') {
-    op = fopen(op_name, "r");
-    Read(op);
+  int lsock = socket(AF_INET, SOCK_STREAM, 0);
+  if (lsock < 0) {
+    Error("socket");
   }
-  Read(stdin);
 
-  return 0;
+  struct sockaddr_in addr;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = htons(port);
+  addr.sin_family = AF_INET;
+  setsockopt(lsock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+  if (bind(lsock, (struct sockaddr*)&addr, sizeof(addr))) {
+    Error("bind");
+  }
+  if (listen(lsock, 5)) {
+    Error("listen");
+  }
+
+  while (true) {
+    int csock = accept(lsock, NULL,  NULL);
+    if (csock < 0) {
+      Error("accept");
+    }
+    Handle(&csock, root);
+  }
+
+  return EXIT_SUCCESS;
 }
