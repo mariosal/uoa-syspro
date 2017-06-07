@@ -63,7 +63,6 @@ void HandlerList(struct Handler* handler) {
 void HandlerFetch(struct Handler* handler, const char* path) {
   sleep(handler->delay);
   char buf[BUFSIZE];
-  printf("%s\n", path);
   snprintf(buf, sizeof(buf), "wc -l < %s", path);
   WriteCmd(handler->sock, buf);
   snprintf(buf, sizeof(buf), "cat %s", path);

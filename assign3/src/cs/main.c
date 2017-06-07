@@ -1,11 +1,20 @@
 #include <arpa/inet.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "cs/handler.h"
 #include "misc.h"
+
+static void* Thread(void* sock_desc) {
+  int sock = *(int*)sock_desc;
+  struct Handler* handler = HandlerInit(sock);
+  HandlerRead(handler);
+  HandlerReset(&handler);
+  return NULL;
+}
 
 int main(int argc, char** argv) {
   uint16_t port = 5000;
@@ -44,11 +53,7 @@ int main(int argc, char** argv) {
     if (csock < 0) {
       Error("accept");
     }
-    struct Handler* handler = HandlerInit(csock);
-    HandlerRead(handler);
-    HandlerReset(&handler);
-    break;
+    pthread_t t;
+    pthread_create(&t, NULL, Thread, &csock);
   }
-
-  return 0;
 }
