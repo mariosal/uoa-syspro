@@ -6,7 +6,8 @@ GL_OBJS = build/misc.o \
 MI_OBJS = build/mi_main.o
 MI_BIN = MirrorInitiator
 
-CS_OBJS = build/cs_main.o
+CS_OBJS = build/cs_main.o \
+          build/cs_handler.o
 CS_BIN = ContentServer
 
 MS_OBJS = build/ms_main.o
@@ -44,7 +45,10 @@ build/mi_main.o : src/mi/main.c
 $(MI_BIN) : $(MI_OBJS)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-build/cs_main.o : src/cs/main.c
+build/cs_main.o : src/cs/main.c include/cs/handler.h include/misc.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build/cs_handler.o : src/cs/handler.c include/cs/handler.h include/misc.h include/str.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(CS_BIN) : $(CS_OBJS) $(GL_OBJS)
