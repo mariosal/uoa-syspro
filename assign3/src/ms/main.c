@@ -20,11 +20,6 @@ static bool Prefix(const char* pr, const char* s) {
 }
 
 static void MirrorManager(struct Queue* q, const char* host, uint16_t port, const char* path, unsigned delay) {
-  printf("%s\n", host);
-  printf("%hu\n", port);
-  printf("%s\n", path);
-  printf("%u\n", delay);
-
   int sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
     Error("socket");
@@ -42,7 +37,6 @@ static void MirrorManager(struct Queue* q, const char* host, uint16_t port, cons
   if (connect(sock, (struct sockaddr*)&addr, sizeof(addr))) {
     Error("connect");
   }
-  printf("ACCEPTED: %d\n", sock);
 
   char cmd[BUFSIZE];
   snprintf(cmd, sizeof(cmd), "LIST 0 %d\n", delay);
@@ -90,6 +84,7 @@ static void Worker(struct Queue* q) {
     size_t num_bytes;
     sscanf(StrS(buf), "%zu", &num_bytes);
 
+    printf("%s\n", path);
     FILE* file = fopen(path, "w");
     int total = 0;
     for (size_t i = 0; i < num_bytes; i += StrLen(buf) + 1) {
