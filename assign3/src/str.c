@@ -1,5 +1,6 @@
 #include "str.h"
 
+#include <stdio.h> //remove
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -87,6 +88,20 @@ void StrReadNl(struct Str* str, int fd) {
       break;
     }
     init = false;
+    StrInsert(str, c);
+  }
+}
+
+void StrReadAllNl(struct Str* str, int fd) {
+  StrZero(str);
+  while (true) {
+    char c;
+    if (read(fd, &c, sizeof(c)) <= 0) {
+      break;
+    }
+    if (c == '\n') {
+      break;
+    }
     StrInsert(str, c);
   }
 }

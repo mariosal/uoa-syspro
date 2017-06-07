@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -55,7 +56,8 @@ static void MirrorManager(struct Queue* q, const char* host, uint16_t port, cons
   for (size_t i = 0; i < num_dirs; ++i) {
     StrReadNl(buf, sock);
     if (Prefix(path + 2, StrS(buf) + 2)) {
-      printf("%s\n", StrS(buf));
+      snprintf(cmd, sizeof(cmd), "mkdir -p %s\n", StrS(buf));
+      system(cmd);
     }
   }
 
@@ -70,27 +72,54 @@ static void MirrorManager(struct Queue* q, const char* host, uint16_t port, cons
     }
   }
 
-  while (QueueLen(q) > 0) {
-    char qpath[BUFSIZE];
-    int qsock;
-    QueuePop(q, qpath, &qsock);
-    printf("%s %d\n", qpath, qsock);
-  }
-
   StrReset(&buf);
-  close(sock);
+}
+
+static void Worker(struct Queue* q) {
+  while (QueueLen(q) > 0) {
+    char path[BUFSIZE];
+    int sock;
+    QueuePop(q, path, &sock);
+
+    char cmd[BUFSIZE];
+    snprintf(cmd, sizeof(cmd), "FETCH %s\n", path);
+    WriteAll(sock, cmd, strlen(cmd));
+
+    struct Str* buf = StrInit();
+    StrRead(buf, sock);
+    size_t num_bytes;
+    sscanf(StrS(buf), "%zu", &num_bytes);
+
+    FILE* file = fopen(path, "w");
+    int total = 0;
+    for (size_t i = 0; i < num_bytes; i += StrLen(buf) + 1) {
+      StrReadAllNl(buf, sock);
+      total += StrLen(buf);
+      fprintf(file, "%s\n", StrS(buf));
+    }
+    fclose(file);
+    StrReset(&buf);
+  }
 }
 
 int main(int argc, char** argv) {
   uint16_t port = 6000;
+  char root[BUFSIZE];
+  int num_threads = 1;
+  strcpy(root, "output");
   for (int i = 1; i < argc; ++i) {
     if (Equals(argv[i], "p")) {
       ++i;
       sscanf(argv[i], "%" SCNu16, &port);
-    } else if (Equals(argv[i], "d")) {
+    } else if (Equals(argv[i], "m")) {
       ++i;
+      strcpy(root, argv[i]);
+    } else if (Equals(argv[i], "w")) {
+      ++i;
+      sscanf(argv[i], "%d", &num_threads);
     }
   }
+  chdir(root);
 
   int lsock = socket(AF_INET, SOCK_STREAM, 0);
   if (lsock < 0) {
@@ -140,6 +169,7 @@ int main(int argc, char** argv) {
       sscanf(StrS(buf), "%u", &delay);
 
       MirrorManager(q, host, cs_port, path, delay);
+      Worker(q);
     }
     StrReset(&buf);
     QueueReset(&q);

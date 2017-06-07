@@ -11,5 +11,6 @@ void StrZero(struct Str* str);
 void StrInsert(struct Str* str, char c);
 void StrRead(struct Str* str, int fd);
 void StrReadNl(struct Str* str, int fd);
+void StrReadAllNl(struct Str* str, int fd);
 
 #endif  // STR_H_
