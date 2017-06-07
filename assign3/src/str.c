@@ -58,13 +58,13 @@ void StrRead(struct Str* str, int fd) {
   bool init = true;
   while (true) {
     char c;
-    if (read(fd, &c, sizeof(c)) == 0) {
+    if (read(fd, &c, sizeof(c)) <= 0) {
       break;
     }
-    if (isspace(c) && init) {
+    if ((isspace(c) || iscntrl(c)) && init) {
       continue;
     }
-    if (isspace(c)) {
+    if (isspace(c) || iscntrl(c)) {
       break;
     }
     init = false;
@@ -77,10 +77,10 @@ void StrReadNl(struct Str* str, int fd) {
   bool init = true;
   while (true) {
     char c;
-    if (read(fd, &c, sizeof(c)) == 0) {
+    if (read(fd, &c, sizeof(c)) <= 0) {
       break;
     }
-    if (isspace(c) && init) {
+    if ((isspace(c) || iscntrl(c)) && init) {
       continue;
     }
     if (c == '\n') {

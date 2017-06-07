@@ -37,7 +37,7 @@ void WriteCmd(int fd, const char* cmd) {
   }
   while (true) {
     char c;
-    if (fread(&c, sizeof(c), 1, pipe) == 0) {
+    if (fread(&c, sizeof(c), 1, pipe) <= 0) {
       break;
     }
     write(fd, &c, sizeof(c));

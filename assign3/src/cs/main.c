@@ -9,11 +9,14 @@
 #include "misc.h"
 
 static void* Thread(void* sock_desc) {
+  if (pthread_detach(pthread_self())) {
+    Error("detach");
+  }
   int sock = *(int*)sock_desc;
   struct Handler* handler = HandlerInit(sock);
   HandlerRead(handler);
   HandlerReset(&handler);
-  return NULL;
+  pthread_exit(NULL);
 }
 
 int main(int argc, char** argv) {
@@ -54,6 +57,8 @@ int main(int argc, char** argv) {
       Error("accept");
     }
     pthread_t t;
-    pthread_create(&t, NULL, Thread, &csock);
+    if (pthread_create(&t, NULL, Thread, &csock)) {
+      Error("create");
+    }
   }
 }
