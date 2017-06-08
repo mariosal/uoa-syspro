@@ -1,6 +1,7 @@
 # Exercise configuration
 
-GL_OBJS = build/misc.o \
+GL_OBJS = build/inta.o \
+          build/misc.o \
           build/str.o
 
 MI_OBJS = build/mi_main.o
@@ -33,6 +34,9 @@ clean :
 	$(RM) -r $(MI_BIN) $(CS_BIN) $(MS_BIN) build/* output/*
 
 # Exercise builds
+
+build/inta.o : src/inta.c include/inta.h include/misc.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/misc.o : src/misc.c include/misc.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

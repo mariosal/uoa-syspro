@@ -10,6 +10,7 @@
 #include "ms/queue.h"
 #include "misc.h"
 #include "str.h"
+#include "inta.h"
 
 static size_t num_cs;
 static int* sock_cs;
@@ -18,11 +19,10 @@ static pthread_mutex_t* sock_lock;
 static size_t count_active_mirrors;
 static pthread_mutex_t counter_lock;
 static size_t bytes;
-static size_t bytes_avg;
-static size_t bytes_var;
+static double bytes_avg;
+static struct Inta* bytes_file;
 static pthread_mutex_t bytes_lock;
 static size_t files;
-static pthread_mutex_t files_lock;
 
 struct MirrorArg {
   struct Queue* q;
@@ -138,12 +138,18 @@ static void* Worker(void* arg_void) {
     char real_path[BUFSIZE];
     snprintf(real_path, sizeof(real_path), "%s/%s", path_cs[id], path);
     FILE* file = fopen(real_path, "w");
-    int total = 0;
+    size_t total = 0;
     for (size_t i = 0; i < num_bytes; i += StrLen(buf) + 1) {
       StrReadAllNl(buf, sock);
       total += StrLen(buf) + 1;
       fprintf(file, "%s\n", StrS(buf));
     }
+    pthread_mutex_lock(&bytes_lock);
+    bytes += total;
+    ++files;
+    bytes_avg = (double)bytes / files;
+    IntaInsert(bytes_file, total);
+    pthread_mutex_unlock(&bytes_lock);
     fclose(file);
     StrReset(&buf);
     pthread_mutex_unlock(&sock_lock[id]);
@@ -202,8 +208,9 @@ int main(int argc, char** argv) {
 
     bytes = 0;
     bytes_avg = 0;
-    bytes_var = 0;
+    bytes_file = IntaInit();
     files = 0;
+    pthread_mutex_init(&bytes_lock, NULL);
 
     sock_cs = malloc(sizeof(*sock_cs) * num_cs);
     path_cs = malloc(sizeof(*path_cs) * num_cs);
@@ -264,16 +271,21 @@ int main(int argc, char** argv) {
     snprintf(st, sizeof(st), "4\n");
     WriteAll(csock, st, strlen(st));
 
-    snprintf(st, sizeof(st), "Count bytes: %d\n", bytes);
+    snprintf(st, sizeof(st), "Count bytes: %zu\n", bytes);
     WriteAll(csock, st, strlen(st));
 
-    snprintf(st, sizeof(st), "Count files: %d\n", files);
+    snprintf(st, sizeof(st), "Count files: %zu\n", files);
     WriteAll(csock, st, strlen(st));
 
-    snprintf(st, sizeof(st), "Average bytes: 5\n", bytes_avg);
+    snprintf(st, sizeof(st), "Average bytes: %lf\n", bytes_avg);
     WriteAll(csock, st, strlen(st));
 
-    snprintf(st, sizeof(st), "Bytes variance: %d\n", bytes_var);
+    double bytes_var = 0;
+    for (size_t i = 0; i < IntaLen(bytes_file); ++i) {
+      bytes_var += (IntaS(bytes_file)[i] - bytes_avg) * (IntaS(bytes_file)[i] - bytes_avg);
+    }
+    bytes_var = bytes_var / files;
+    snprintf(st, sizeof(st), "Bytes variance: %lf\n", bytes_var);
     WriteAll(csock, st, strlen(st));
 
     for (size_t i = 0; i < num_cs; ++i) {
@@ -281,11 +293,14 @@ int main(int argc, char** argv) {
       close(sock_cs[i]);
       free(path_cs[i]);
     }
+    pthread_mutex_destroy(&counter_lock);
+    pthread_mutex_destroy(&bytes_lock);
     free(sock_cs);
     free(path_cs);
     free(sock_lock);
     free(mirror_t);
     free(worker_t);
+    IntaReset(&bytes_file);
     StrReset(&buf);
     QueueReset(&q);
     close(csock);

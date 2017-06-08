@@ -1,6 +1,5 @@
 #include "str.h"
 
-#include <stdio.h> //remove
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
