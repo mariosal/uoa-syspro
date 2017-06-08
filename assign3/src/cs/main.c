@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -13,6 +14,7 @@ static void* Thread(void* sock_desc) {
     Error("detach");
   }
   int sock = *(int*)sock_desc;
+  free(sock_desc);
   struct Handler* handler = HandlerInit(sock);
   HandlerRead(handler);
   HandlerReset(&handler);
@@ -57,7 +59,9 @@ int main(int argc, char** argv) {
       Error("accept");
     }
     pthread_t t;
-    if (pthread_create(&t, NULL, Thread, &csock)) {
+    int* sock = malloc(sizeof(*sock));
+    *sock = csock;
+    if (pthread_create(&t, NULL, Thread, sock)) {
       Error("create");
     }
   }

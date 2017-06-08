@@ -62,6 +62,12 @@ size_t QueueLen(struct Queue* q) {
 }
 
 void QueuePop(struct Queue* q, char* path, int* sock) {
+  pthread_mutex_lock(&q->mutex);
+
+  while (q->len == 0) {
+    pthread_cond_wait(&q->cond, &q->mutex);
+  }
+
   snprintf(path, sizeof(q->front->path), "%s", q->front->path);
   *sock = q->front->sock;
 
@@ -72,6 +78,7 @@ void QueuePop(struct Queue* q, char* path, int* sock) {
   }
   free(tmp);
   --q->len;
+  pthread_mutex_unlock(&q->mutex);
 }
 
 void QueuePush(struct Queue* q, const char* path, int sock) {

@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "misc.h"
+#include "str.h"
 
 static size_t CountComma(const char* s) {
   size_t comma = 0;
@@ -68,6 +69,16 @@ int main(int argc, char** argv) {
     }
     write(sock, &servers[i], sizeof(servers[i]));
   }
+
+  struct Str* st = StrInit();
+  StrRead(st, sock);
+  size_t st_len;
+  sscanf(StrS(st), "%zu", &st_len);
+  for (size_t i = 0; i < st_len; ++i) {
+    StrReadNl(st, sock);
+    printf("%s\n", StrS(st));
+  }
+  StrReset(&st);
   close(sock);
 
   return 0;
